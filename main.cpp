@@ -1,5 +1,11 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <random>
+#include <algorithm>
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
 class Sudoku{
     public:
     Sudoku()
@@ -10,7 +16,7 @@ class Sudoku{
     vector<vector<char>> board;
 
     void generateRandomSudoku(int n)
-    {
+    {   reseedRandom();
         if(n==1) generateSudokuWithNClues(47+dist(rng));
         else if(n==2) generateSudokuWithNClues(40+dist(rng));
         else generateSudokuWithNClues(33+dist(rng));
@@ -121,9 +127,12 @@ class Sudoku{
 
     private:
     vector<vector<char>> solution;
-    random_device rd;
-    mt19937 rng{rd()};
+    mt19937 rng;
     uniform_int_distribution<int> dist{0,6};
+    void reseedRandom() 
+    {
+        rng.seed(steady_clock::now().time_since_epoch().count());
+    }
     bool isValidMove(vector<vector<char>> &board, int row, int col, char num)
     {
         // Check row
@@ -190,8 +199,9 @@ class Sudoku{
     }
     void generateSudokuWithNClues(int n) 
     {
-        // shuffle(vec.begin(), vec.end(), rng);
-        fillGrid(0, 0); // Step 1: Create a full valid grid
+        cout<<"num of clues"<<n<<endl;
+        solution.assign(9, vector<char>(9, ' '));
+        fillGrid(0, 0);
         board=solution;
         vector<pair<int, int>> cells;
         for (int i = 0; i < 9; i++)
