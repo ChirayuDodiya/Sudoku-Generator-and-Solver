@@ -7,6 +7,7 @@ Sudoku::Sudoku()
     {
         board.resize(9, vector<char>(9, ' '));
         solution.resize(9, vector<char>(9, ' '));
+        possibility.assign(9,vector<set<char>>(9));
     }
     
 void Sudoku::generateRandomSudoku(int n)
@@ -127,7 +128,6 @@ void Sudoku::reseedRandom()
         rng.seed(steady_clock::now().time_since_epoch().count());
     }
 
-
 bool Sudoku::isValidMove(vector<vector<char>> &board, int row, int col, char num)
     {
         // Check row
@@ -150,7 +150,337 @@ bool Sudoku::isValidMove(vector<vector<char>> &board, int row, int col, char num
 
         return true;
     }
+//make everyone tempboard
+bool Sudoku::isHumansolvable(vector<vector<char>>&board)
+{       
+        vector<vector<char>>tempboard=board;
+        // Initialize possibility for all empty cells
+        initializepossiblity();
+        
+        // Keep applying techniques until solved or no progress
+        bool progress = true;
+        int iterations = 0;
+        const int MAX_ITERATIONS = 100; // Prevent infinite loops
+        
+        while (progress && !isSolved(tempboard) && iterations < MAX_ITERATIONS) {
+            progress = false;
+            iterations++;
+            
+            // Apply the 4 techniques in order
+            if (applyNakedSingles(tempboard)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyHiddenSingles(tempboard)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyNakedPairs(tempboard)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyPointingPairs(tempboard)) {
+                progress = true;
+                continue;
+            }
+        }
+        
+        // Return true if completely solved
+        return isSolved(tempboard);
+}
+
+void Sudoku::initializepossiblity() 
+{
+        possibility.assign(9,vector<set<char>>(9));
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                if (board[row][col] == ' ') {
+                    // Add all possible possibility for empty cells
+                    for (char num = '1'; num <= '9'; num++) {
+                        if (isValidMove(board,row, col,num)) {
+                            possibility[row][col].insert(num);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+void Sudoku::updatepossiblityAfterMove(int row, int col, char num) {
+        // Clear possibility for the filled cell
+        possibility[row][col].clear();
+        
+        // Remove this number from possibility in the same row
+        for (int c = 0; c < 9; c++) {
+            possibility[row][c].erase(num);
+        }
+        
+        // Remove this number from possibility in the same column
+        for (int r = 0; r < 9; r++) {
+            possibility[r][col].erase(num);
+        }
+        
+        // Remove this number from possibility in the same box
+        int box_row = (row / 3) * 3;
+        int box_col = (col / 3) * 3;
+        for (int r = box_row; r < box_row + 3; r++) {
+            for (int c = box_col; c < box_col + 3; c++) {
+                possibility[r][c].erase(num);
+            }
+        }
+    }
+
+bool Sudoku::applyNakedSingles(vector<vector<char>>&tempboard) 
+{
+    bool found = false;
     
+    for (int row = 0; row < 9; row++) {
+        for (int col = 0; col < 9; col++) {
+            // If cell is empty and has only one candidate
+            if (tempboard[row][col] == ' ' && possibility[row][col].size() == 1) {
+                char num = *possibility[row][col].begin();
+                tempboard[row][col] = num;
+                updatepossiblityAfterMove(row, col, num);
+                found = true;
+            }
+        }
+    }
+    
+    return found;
+}
+
+bool Sudoku::applyHiddenSingles(vector<vector<char>>&tempboard) 
+{
+    bool found = false;
+    
+    // Check rows for hidden singles
+    for (int row = 0; row < 9; row++) 
+    {
+        for (char num = '1'; num <= '9'; num++) {
+            vector<int> possible_cols;
+            
+            // Find all columns in this row where 'num' can go
+            for (int col = 0; col < 9; col++) {
+                if (tempboard[row][col] == ' ' && possibility[row][col].count(num)) {
+                    possible_cols.push_back(col);
+                }
+            }
+            
+            // If only one position possible, it's a hidden single
+            if (possible_cols.size() == 1) {
+                int col = possible_cols[0];
+                tempboard[row][col] = num;
+                updatepossiblityAfterMove(row, col, num);
+                found = true;
+            }
+        }
+    }
+    
+    // Check columns for hidden singles
+    for (int col = 0; col < 9; col++) 
+    {
+        for (char num = '1'; num <= '9'; num++) {
+            vector<int> possible_rows;
+            
+            for (int row = 0; row < 9; row++) {
+                if (tempboard[row][col] == ' ' && possibility[row][col].count(num)) {
+                    possible_rows.push_back(row);
+                }
+            }
+            
+            if (possible_rows.size() == 1) {
+                int row = possible_rows[0];
+                tempboard[row][col] = num;
+                updatepossiblityAfterMove(row, col, num);
+                found = true;
+            }
+        }
+    }
+    
+    // Check boxes for hidden singles
+    for (int box = 0; box < 9; box++) 
+    {
+        int box_row = (box / 3) * 3;
+        int box_col = (box % 3) * 3;
+        
+        for (char num = '1'; num <= '9'; num++) {
+            vector<pair<int, int>> possible_cells;
+            
+            for (int r = box_row; r < box_row + 3; r++) {
+                for (int c = box_col; c < box_col + 3; c++) {
+                    if (tempboard[r][c] == ' ' && possibility[r][c].count(num)) {
+                        possible_cells.push_back({r, c});
+                    }
+                }
+            }
+            
+            if (possible_cells.size() == 1) {
+                int row = possible_cells[0].first;
+                int col = possible_cells[0].second;
+                tempboard[row][col] = num;
+                updatepossiblityAfterMove(row, col, num);
+                found = true;
+            }
+        }
+    }
+    
+    return found;
+}
+
+bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
+{
+    bool found = false;
+    
+    // Check rows for naked pairs
+    for (int row = 0; row < 9; row++) {
+        for (int col1 = 0; col1 < 8; col1++) {
+            for (int col2 = col1 + 1; col2 < 9; col2++) {
+                // Check if both cells are empty, have exactly 2 possibility, and are identical
+                if (tempboard[row][col1] == ' ' && tempboard[row][col2] == ' ' &&
+                    possibility[row][col1].size() == 2 &&
+                    possibility[row][col1] == possibility[row][col2]) {
+                    
+                    // Remove these possibility from other cells in the row
+                    for (int c = 0; c < 9; c++) {
+                        if (c != col1 && c != col2 && tempboard[row][c] == ' ') {
+                            for (char num : possibility[row][col1]) {
+                                if (possibility[row][c].erase(num)) {
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check columns for naked pairs
+    for (int col = 0; col < 9; col++) {
+        for (int row1 = 0; row1 < 8; row1++) {
+            for (int row2 = row1 + 1; row2 < 9; row2++) {
+                if (tempboard[row1][col] == ' ' && tempboard[row2][col] == ' ' &&
+                    possibility[row1][col].size() == 2 &&
+                    possibility[row1][col] == possibility[row2][col]) {
+                    
+                    for (int r = 0; r < 9; r++) {
+                        if (r != row1 && r != row2 && tempboard[r][col] == ' ') {
+                            for (char num : possibility[row1][col]) {
+                                if (possibility[r][col].erase(num)) {
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check boxes for naked pairs
+    for (int box = 0; box < 9; box++) {
+        int box_row = (box / 3) * 3;
+        int box_col = (box % 3) * 3;
+        
+        vector<pair<int, int>> empty_cells;
+        for (int r = box_row; r < box_row + 3; r++) {
+            for (int c = box_col; c < box_col + 3; c++) {
+                if (tempboard[r][c] == ' ') {
+                    empty_cells.push_back({r, c});
+                }
+            }
+        }
+        
+        for (size_t i = 0; i < empty_cells.size() - 1; i++) {
+            for (size_t j = i + 1; j < empty_cells.size(); j++) {
+                int r1 = empty_cells[i].first, c1 = empty_cells[i].second;
+                int r2 = empty_cells[j].first, c2 = empty_cells[j].second;
+                
+                if (possibility[r1][c1].size() == 2 &&
+                    possibility[r1][c1] == possibility[r2][c2]) {
+                    
+                    for (auto& cell : empty_cells) {
+                        int r = cell.first, c = cell.second;
+                        if ((r != r1 || c != c1) && (r != r2 || c != c2)) {
+                            for (char num : possibility[r1][c1]) {
+                                if (possibility[r][c].erase(num)) {
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return found;
+}
+
+bool Sudoku::applyPointingPairs(vector<vector<char>>&tempboard)
+{
+    bool found = false;
+    
+    // For each box, check if a number appears only in one row or column
+    for (int box = 0; box < 9; box++) {
+        int box_row = (box / 3) * 3;
+        int box_col = (box % 3) * 3;
+        
+        for (char num = '1'; num <= '9'; num++) {
+            // Check if number appears only in one row of the box
+            set<int> rows_with_num;
+            for (int r = box_row; r < box_row + 3; r++) {
+                for (int c = box_col; c < box_col + 3; c++) {
+                    if (tempboard[r][c] == ' ' && possibility[r][c].count(num)) {
+                        rows_with_num.insert(r);
+                    }
+                }
+            }
+            
+            // If number only appears in one row of the box
+            if (rows_with_num.size() == 1) {
+                int row = *rows_with_num.begin();
+                // Remove this number from other cells in the same row outside the box
+                for (int c = 0; c < 9; c++) {
+                    if ((c < box_col || c >= box_col + 3) && 
+                        tempboard[row][c] == ' ' && 
+                        possibility[row][c].erase(num)) {
+                        found = true;
+                    }
+                }
+            }
+            
+            // Check if number appears only in one column of the box
+            set<int> cols_with_num;
+            for (int c = box_col; c < box_col + 3; c++) {
+                for (int r = box_row; r < box_row + 3; r++) {
+                    if (tempboard[r][c] == ' ' && possibility[r][c].count(num)) {
+                        cols_with_num.insert(c);
+                    }
+                }
+            }
+            
+            // If number only appears in one column of the box
+            if (cols_with_num.size() == 1) {
+                int col = *cols_with_num.begin();
+                // Remove this number from other cells in the same column outside the box
+                for (int r = 0; r < 9; r++) {
+                    if ((r < box_row || r >= box_row + 3) && 
+                        tempboard[r][col] == ' ' && 
+                        possibility[r][col].erase(num)) {
+                        found = true;
+                    }
+                }
+            }
+        }
+    }
+    
+    return found;
+}
+
 int Sudoku::countSolutions(vector<vector<char>> &board, int& count)
     {
         if(count >= 2) return count; // Early exit if we already found multiple solutions
@@ -215,8 +545,10 @@ void Sudoku::generateSudokuWithNClues(int n)
             board[row][col] = ' ';
             int count = 0;
             countSolutions(board,count);
-            if (count != 1) // not unique, restore
+            if((count != 1)||(!isHumansolvable(board)))
+            {
                 board[row][col] = backup;
+            }
             else
                 totalCells--;
         }
