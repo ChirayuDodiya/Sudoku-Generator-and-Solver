@@ -31,14 +31,14 @@ private:
     void initializepossiblity();
     void updatepossiblityAfterMove(int row, int col, char num);
     bool isHumansolvable(vector<vector<char>> &board);
-    //last free cell
-    bool applyNakedSingles(vector<vector<char>>&tempboard);
-    //last remaining cell,last possible number,obvious single
-    bool applyHiddenSingles(vector<vector<char>>&tempboard);
-    //obvious pairs
-    bool applyNakedPairs(vector<vector<char>>&tempboard);
-    //pointing pairs
-    bool applyPointingPairs(vector<vector<char>>&tempboard);
+    //obviousSingle
+    bool applyObviousSingle(vector<vector<char>>&tempboard,bool printReason);
+    //HiddenSingle
+    bool applyHiddenSingle(vector<vector<char>>&tempboard,bool printReason);
+    //obviousPair
+    bool applyObviousPair(vector<vector<char>>&tempboard,bool printReason);
+    //pointingPair
+    bool applyPointingPair(vector<vector<char>>&tempboard,bool printReason);
     void generateSudokuWithNClues(int n);
     void printBoard(vector<vector<char>>& s);
     bool isSolved(vector<vector<char>>& b);
