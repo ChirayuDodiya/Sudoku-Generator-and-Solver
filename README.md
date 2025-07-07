@@ -52,7 +52,6 @@ sudoku.exe
 ## Contributing
 
 Feel free to fork this project and submit pull requests for improvements such as:
-- Additional difficulty levels
 - Save/load functionality
 - GUI interface
 - Performance optimizations
