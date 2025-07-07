@@ -4,11 +4,11 @@ A feature-rich terminal-based Sudoku game written in modern C++17. This project 
 
 ## Features
 
-- **Random Puzzle Generation**: Create unique Sudoku puzzles with guaranteed single solutions
+- **Random Puzzle Generation**: Create unique Sudoku puzzles with guaranteed human solvable with single solutions
 - **Multiple Difficulty Levels**: Choose from Easy, Medium, or Hard difficulty settings
 - **Custom Puzzle Input**: Import and solve your own Sudoku puzzles
 - **Interactive Solver**: Play with real-time validation and helpful feedback
-- **Solution Display**: View the complete solution when needed
+- **Solution Display**: View hint when needed
 - **Modern C++17**: Built using contemporary C++ standards and best practices
 
 ## Project Structure
@@ -57,6 +57,7 @@ Feel free to fork this project and submit pull requests for improvements such as
 - GUI interface
 - Performance optimizations
 - Additional puzzle variants
+- Additional Human Solvable Patterns
 
 ## License
 
