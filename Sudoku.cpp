@@ -3,20 +3,21 @@
 using namespace std;
 using namespace std::chrono;
 
+//constructor
 Sudoku::Sudoku()
     {
         board.resize(9, vector<char>(9, ' '));
         solution.resize(9, vector<char>(9, ' '));
         possibility.assign(9,vector<set<char>>(9));
     }
-    
+//calls generateSudokuWithNClues function
 void Sudoku::generateRandomSudoku(int n)
     {   reseedRandom();
         if(n==1) generateSudokuWithNClues(47+dist(rng));
         else if(n==2) generateSudokuWithNClues(40+dist(rng));
         else generateSudokuWithNClues(33+dist(rng));
     }
-
+//takes input of sudoku from user
 void Sudoku::inputCustomSudoku()
     {
         cout<<"Enter the Sudoku puzzle Row wise without any blank space(0 for empty cells):\n";
@@ -46,7 +47,7 @@ void Sudoku::inputCustomSudoku()
         }
         return;
     }
-
+//main function for user interface
 void Sudoku::interactiveSolve()
     {
         solution=findSolution(board);
@@ -65,10 +66,10 @@ void Sudoku::interactiveSolve()
             printBoard(board);
             cout<<"enter row number column number and value to fill"<<endl;
             cout<<"type 0 0 0 to exit"<<endl;
-            cout<<"type -1 -1 -1 to print the solution"<<endl;
+            cout<<"type -1 -1 -1 to get hint"<<endl;
             int row, col, value;
             cin>>row>>col>>value;
-            char ch = value + '0'; // Convert integer to character
+            char ch = value + '0';
 
             if(row == 0 && col == 0 && value == 0)
             {
@@ -78,7 +79,11 @@ void Sudoku::interactiveSolve()
             
             else if(row == -1 && col == -1 && value == -1)
             {
-                printBoard(solution);
+                initializepossiblity();
+                if(applyObviousSingle(board,1)){}
+                else if(applyHiddenSingle(board,1)){}
+                else cout<<"this sudoku is not solvable by hidden single or obvious single"<<endl;
+                
             }
 
             else if(row <= 0 || row > 9 || col <= 0 || col > 9 || value <= 0 || value > 9)
@@ -99,13 +104,13 @@ void Sudoku::interactiveSolve()
             }
 
             else {
-                board[row-1][col-1] = ch; // Fill the cell with the value
+                board[row-1][col-1] = ch;
             }
         }
         printBoard(board);
         cout<<"Congratulations! You have solved the Sudoku puzzle.\n";
     }
-    
+//finds solution,and if no unique solution is there or multiple solutions are there,it gives warning message   
 void Sudoku::getsolution(){
         solution=findSolution(board);
         if(solution.size()==1 && solution[0].size()==1 && solution[0][0] == '1')
@@ -122,25 +127,22 @@ void Sudoku::getsolution(){
         printBoard(solution);
         return;
     }
-
+//to get more random values
 void Sudoku::reseedRandom() 
     {
         rng.seed(steady_clock::now().time_since_epoch().count());
     }
-
+//checks if it is valid to put num at board[row][col]
 bool Sudoku::isValidMove(vector<vector<char>> &board, int row, int col, char num)
     {
-        // Check row
         for(int j = 0; j < 9; j++)
             if(board[row][j] == num)
                 return false;
-
-        // Check column
+        
         for(int i = 0; i < 9; i++)
             if(board[i][col] == num)
                 return false;
-
-        // Check 3x3 subgrid
+        
         int startRow = (row / 3) * 3;
         int startCol = (col / 3) * 3;
         for(int i = startRow; i < startRow + 3; i++)
@@ -150,55 +152,49 @@ bool Sudoku::isValidMove(vector<vector<char>> &board, int row, int col, char num
 
         return true;
     }
-//make everyone tempboard
+//checks if generated sudoku is solvable by human(checks basic methods,advance methods will be added)
 bool Sudoku::isHumansolvable(vector<vector<char>>&board)
 {       
         vector<vector<char>>tempboard=board;
-        // Initialize possibility for all empty cells
         initializepossiblity();
         
-        // Keep applying techniques until solved or no progress
         bool progress = true;
         int iterations = 0;
-        const int MAX_ITERATIONS = 100; // Prevent infinite loops
+        const int MAX_ITERATIONS = 100;
         
         while (progress && !isSolved(tempboard) && iterations < MAX_ITERATIONS) {
             progress = false;
             iterations++;
             
-            // Apply the 4 techniques in order
-            if (applyNakedSingles(tempboard)) {
+            if (applyObviousSingle(tempboard,0)) {
                 progress = true;
                 continue;
             }
             
-            if (applyHiddenSingles(tempboard)) {
+            if (applyHiddenSingle(tempboard,0)) {
                 progress = true;
                 continue;
             }
             
-            if (applyNakedPairs(tempboard)) {
+            if (applyObviousPair(tempboard,0)) {
                 progress = true;
                 continue;
             }
             
-            if (applyPointingPairs(tempboard)) {
+            if (applyPointingPair(tempboard,0)) {
                 progress = true;
                 continue;
             }
         }
-        
-        // Return true if completely solved
         return isSolved(tempboard);
 }
-
+// Add all possible possibility for empty cells in board
 void Sudoku::initializepossiblity() 
 {
         possibility.assign(9,vector<set<char>>(9));
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
                 if (board[row][col] == ' ') {
-                    // Add all possible possibility for empty cells
                     for (char num = '1'; num <= '9'; num++) {
                         if (isValidMove(board,row, col,num)) {
                             possibility[row][col].insert(num);
@@ -208,9 +204,8 @@ void Sudoku::initializepossiblity()
             }
         }
     }
-
+//update possiblity after correct move
 void Sudoku::updatepossiblityAfterMove(int row, int col, char num) {
-        // Clear possibility for the filled cell
         possibility[row][col].clear();
         
         // Remove this number from possibility in the same row
@@ -232,27 +227,32 @@ void Sudoku::updatepossiblityAfterMove(int row, int col, char num) {
             }
         }
     }
-
-bool Sudoku::applyNakedSingles(vector<vector<char>>&tempboard) 
+// If cell is empty and has only one candidate
+bool Sudoku::applyObviousSingle(vector<vector<char>>&tempboard,bool printReason) 
 {
     bool found = false;
     
     for (int row = 0; row < 9; row++) {
         for (int col = 0; col < 9; col++) {
-            // If cell is empty and has only one candidate
             if (tempboard[row][col] == ' ' && possibility[row][col].size() == 1) {
                 char num = *possibility[row][col].begin();
                 tempboard[row][col] = num;
                 updatepossiblityAfterMove(row, col, num);
                 found = true;
+                if(printReason)
+                {
+                    cout<<"Hint:Obvious Single"<<endl;
+                    cout<<"at index "<<row<<" "<<col<<" there is only one possible num "<<num<<"."<<endl;
+                    return found;
+                }
             }
         }
     }
     
     return found;
 }
-
-bool Sudoku::applyHiddenSingles(vector<vector<char>>&tempboard) 
+// If only one position possible, it's a hidden single
+bool Sudoku::applyHiddenSingle(vector<vector<char>>&tempboard,bool printReason) 
 {
     bool found = false;
     
@@ -275,6 +275,12 @@ bool Sudoku::applyHiddenSingles(vector<vector<char>>&tempboard)
                 tempboard[row][col] = num;
                 updatepossiblityAfterMove(row, col, num);
                 found = true;
+                if(printReason)
+                {
+                    cout<<"Hint:Hidden Single"<<endl;
+                    cout<<"for row "<<row<<" there is only one possible column "<<possible_cols[0]<<" where can i insert "<<num<<endl;
+                    return found;
+                }
             }
         }
     }
@@ -296,6 +302,12 @@ bool Sudoku::applyHiddenSingles(vector<vector<char>>&tempboard)
                 tempboard[row][col] = num;
                 updatepossiblityAfterMove(row, col, num);
                 found = true;
+                if(printReason)
+                {
+                    cout<<"Hint:Hidden Single"<<endl;
+                    cout<<"for column "<<col<<" there is only one possible row "<<possible_rows[0]<<" where can i insert "<<num<<endl;
+                    return found;
+                }
             }
         }
     }
@@ -323,14 +335,20 @@ bool Sudoku::applyHiddenSingles(vector<vector<char>>&tempboard)
                 tempboard[row][col] = num;
                 updatepossiblityAfterMove(row, col, num);
                 found = true;
+                if(printReason)
+                {
+                    cout<<"Hint:Hidden Single"<<endl;
+                    cout<<"for box "<<box<<" there is only one possible row,column "<<row<<" "<<col<<" where can i insert "<<num<<endl;
+                    return found;
+                }
             }
         }
     }
     
     return found;
 }
-
-bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
+// if 2 cells are empty, have exactly 2 possibility, and are identical,so remove that from all other respective
+bool Sudoku::applyObviousPair(vector<vector<char>>&tempboard,bool printReason)
 {
     bool found = false;
     
@@ -349,6 +367,15 @@ bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
                             for (char num : possibility[row][col1]) {
                                 if (possibility[row][c].erase(num)) {
                                     found = true;
+                                    if(printReason)
+                                    {   
+                                        auto it=possibility[row][col1].begin();
+                                        cout<<"Hint:Obvious Pair"<<endl;
+                                        cout<<"for row "<<row<<" there is only 2 column "<<col1<<" "<<col2<<" where can i insert "<<*it<<" ";
+                                        it++;
+                                        cout<<"and "<<*it<<endl;
+                                        return found;
+                                    }
                                 }
                             }
                         }
@@ -371,6 +398,15 @@ bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
                             for (char num : possibility[row1][col]) {
                                 if (possibility[r][col].erase(num)) {
                                     found = true;
+                                    if(printReason)
+                                    {   
+                                        auto it=possibility[row1][col].begin();
+                                        cout<<"Hint:Obvious Pair"<<endl;
+                                        cout<<"for column "<<col<<" there is only 2 rows "<<row1<<" "<<row2<<" where can i insert "<<*it<<" ";
+                                        it++;
+                                        cout<<"and "<<*it<<endl;
+                                        return found;
+                                    }
                                 }
                             }
                         }
@@ -408,6 +444,15 @@ bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
                             for (char num : possibility[r1][c1]) {
                                 if (possibility[r][c].erase(num)) {
                                     found = true;
+                                    if(printReason)
+                                    {   
+                                        auto it=possibility[r1][c1].begin();
+                                        cout<<"Hint:Obvious Pair"<<endl;
+                                        cout<<"for box "<<box<<" there is only 2 sub box "<<r1<<","<<c1<<" "<<r2<<","<<c2<<" where can i insert "<<*it<<" ";
+                                        it++;
+                                        cout<<"and "<<*it<<endl;
+                                        return found;
+                                    }
                                 }
                             }
                         }
@@ -419,8 +464,8 @@ bool Sudoku::applyNakedPairs(vector<vector<char>>&tempboard)
     
     return found;
 }
-
-bool Sudoku::applyPointingPairs(vector<vector<char>>&tempboard)
+//if number appears only in one row/one column of the box,then remove if from that row/column
+bool Sudoku::applyPointingPair(vector<vector<char>>&tempboard,bool printReason)
 {
     bool found = false;
     
@@ -449,6 +494,12 @@ bool Sudoku::applyPointingPairs(vector<vector<char>>&tempboard)
                         tempboard[row][c] == ' ' && 
                         possibility[row][c].erase(num)) {
                         found = true;
+                        if(printReason)
+                        {   
+                            cout<<"Hint:Pointing Pair"<<endl;
+                            cout<<"for box "<<box<<"there is only 1 row "<<row<<" where can i insert "<<num<<endl;
+                        }
+                        return found;
                     }
                 }
             }
@@ -472,6 +523,12 @@ bool Sudoku::applyPointingPairs(vector<vector<char>>&tempboard)
                         tempboard[r][col] == ' ' && 
                         possibility[r][col].erase(num)) {
                         found = true;
+                        if(printReason)
+                        {   
+                            cout<<"Hint:Pointing Pair"<<endl;
+                            cout<<"for box "<<box<<"there is only 1 column "<<col<<" where can i insert "<<num<<endl;
+                        }
+                        return found;
                     }
                 }
             }
@@ -480,10 +537,10 @@ bool Sudoku::applyPointingPairs(vector<vector<char>>&tempboard)
     
     return found;
 }
-
+//count num of solution,if solution>2 then returns 2
 int Sudoku::countSolutions(vector<vector<char>> &board, int& count)
     {
-        if(count >= 2) return count; // Early exit if we already found multiple solutions
+        if(count >= 2) return count;
         
         for(int i=0;i<9;i++)
         {
@@ -497,19 +554,18 @@ int Sudoku::countSolutions(vector<vector<char>> &board, int& count)
                         {
                             board[i][j] = num;
                             countSolutions(board, count);
-                            board[i][j] = ' '; // Backtrack
-                            if(count >= 2) return count; // Early exit
+                            board[i][j] = ' ';
+                            if(count >= 2) return count;
                         }
                     }
                     return count;
                 }
             }
         }
-        // If we reach here, all cells are filled - found one solution
         count++;
         return count;
     }
-    
+//fills grid which could be a possible sudoku answer
 bool Sudoku::fillGrid(int row, int col) {
         if (row == 9) return true;
         if (col == 9) return fillGrid(row + 1, 0);
@@ -524,7 +580,7 @@ bool Sudoku::fillGrid(int row, int col) {
         }
         return false;
     }
-
+//generates sudoku question
 void Sudoku::generateSudokuWithNClues(int n) 
     {
         solution.assign(9, vector<char>(9, ' '));
@@ -553,10 +609,9 @@ void Sudoku::generateSudokuWithNClues(int n)
                 totalCells--;
         }
     }
-
+//finds solution of sudoku
 vector<vector<char>> Sudoku::findSolution(vector<vector<char>>board)
     {
-        // First, check if multiple solutions exist
         int solutionCount = 0;
         countSolutions(board, solutionCount);
         
@@ -566,7 +621,6 @@ vector<vector<char>> Sudoku::findSolution(vector<vector<char>>board)
             return {{'1'}};
         }
         
-        // Single or no solution - proceed with normal solving
         for(int i=0;i<9;i++)
         {
             for(int j=0;j<9;j++)
@@ -579,19 +633,18 @@ vector<vector<char>> Sudoku::findSolution(vector<vector<char>>board)
                         {
                             board[i][j] = num;
                             vector<vector<char>> result = findSolution(board);
-                            if(!result.empty() && result.size() == 9) // Valid solution
+                            if(!result.empty() && result.size() == 9)
                                 return result;
-                            board[i][j] = ' '; // Backtrack
+                            board[i][j] = ' ';
                         }
                     }
-                    return {}; // No valid number found, return empty
+                    return {};
                 }
             }
         }
-        // If we reach here, all cells are filled - return the solved board
         return board;
     }
-
+//checks if sudoku is solved or not
 bool Sudoku::isSolved(vector<vector<char>>&board)
     {
         for(int i=0;i<9;i++)
@@ -603,7 +656,7 @@ bool Sudoku::isSolved(vector<vector<char>>&board)
         }
         return true;
     }
-
+//prints sudoku with proper formate
 void Sudoku::printBoard(vector<vector<char>>&s)
     {
         cout<<"     1   2   3    4   5   6    7   8   9"<<endl;
