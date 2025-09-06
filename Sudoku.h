@@ -42,6 +42,7 @@ private:
     void generateSudokuWithNClues(int n);
     void printBoard(vector<vector<char>>& s);
     bool isSolved(vector<vector<char>>& b);
+    void solverhelper(vector<vector<char>>&board);
     vector<vector<char>> findSolution(vector<vector<char>> b);
 };
 

@@ -188,6 +188,41 @@ bool Sudoku::isHumansolvable(vector<vector<char>>&board)
         }
         return isSolved(tempboard);
 }
+//helps to fill values that are directly solvable ,so that it reduces recursion
+void Sudoku::solverhelper(vector<vector<char>>&board)
+{       
+        initializepossiblity();
+        
+        bool progress = true;
+        int iterations = 0;
+        const int MAX_ITERATIONS = 100;
+        
+        while (progress && !isSolved(board) && iterations < MAX_ITERATIONS) {
+            progress = false;
+            iterations++;
+            
+            if (applyObviousSingle(board,0)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyHiddenSingle(board,0)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyObviousPair(board,0)) {
+                progress = true;
+                continue;
+            }
+            
+            if (applyPointingPair(board,0)) {
+                progress = true;
+                continue;
+            }
+        }
+        return;
+}
 // Add all possible possibility for empty cells in board
 void Sudoku::initializepossiblity() 
 {
@@ -203,7 +238,7 @@ void Sudoku::initializepossiblity()
                 }
             }
         }
-    }
+}
 //update possiblity after correct move
 void Sudoku::updatepossiblityAfterMove(int row, int col, char num) {
         possibility[row][col].clear();
@@ -620,7 +655,7 @@ vector<vector<char>> Sudoku::findSolution(vector<vector<char>>board)
             // Multiple solutions exist, return {{1}}
             return {{'1'}};
         }
-        
+        solverhelper(board);
         for(int i=0;i<9;i++)
         {
             for(int j=0;j<9;j++)
