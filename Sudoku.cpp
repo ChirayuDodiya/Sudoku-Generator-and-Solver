@@ -84,21 +84,21 @@ void Sudoku::interactiveSolve()
             
             else if(row == -1 && col == -1 && value == -1)
             {
-                if(applyPointingPair(board,1))
+                if(applyObviousSingle(board,1))
+                {
+                    
+                }
+                else if(applyHiddenSingle(board,1))
                 {
 
                 }
                 else if(applyObviousPair(board,1))
                 {
-
+                    
                 }
-                else if(applyObviousSingle(board,1))
+                else if(applyPointingPair(board,1))
                 {
-
-                }
-                else if(applyHiddenSingle(board,1))
-                {
-
+                    
                 }
                 else
                 {
@@ -515,16 +515,16 @@ bool Sudoku::applyObviousPair(vector<vector<char>>&tempboard,bool printReason)
                                         if (possibility[r][col].erase(num)) 
                                         {
                                             found = true;
-                                            if(found && printReason)
-                                            {   
-                                                auto it=possibility[row1][col].begin();
-                                                cout<<"Hint:Obvious Pair"<<endl;
-                                                cout<<"for column "<<col+1<<" there is only two rows "<<row1+1<<" "<<row2+1<<" where you can insert "<<*it<<" ";
-                                                it++;
-                                                cout<<"and "<<*it<<endl;
-                                                return found;
-                                            }
                                         }
+                                    }
+                                    if(found && printReason)
+                                    {   
+                                        auto it=possibility[row1][col].begin();
+                                        cout<<"Hint:Obvious Pair"<<endl;
+                                        cout<<"for column "<<col+1<<" there is only two rows "<<row1+1<<" "<<row2+1<<" where you can insert "<<*it<<" ";
+                                        it++;
+                                        cout<<"and "<<*it<<endl;
+                                        return found;
                                     }
                                 }
                             }
@@ -572,16 +572,16 @@ bool Sudoku::applyObviousPair(vector<vector<char>>&tempboard,bool printReason)
                                         if (possibility[r][c].erase(num)) 
                                         {
                                             found = true;
-                                            if(printReason)
-                                            {   
-                                                auto it=possibility[r1][c1].begin();
-                                                cout<<"Hint:Obvious Pair"<<endl;
-                                                cout<<"for box "<<box+1<<" there is only two sub-box "<<r1+1<<","<<c1+1<<" "<<r2+1<<","<<c2+1<<" where you can insert "<<*it<<" ";
-                                                it++;
-                                                cout<<"and "<<*it<<endl;
-                                                return found;
-                                            }
                                         }
+                                    }
+                                    if(found && printReason)
+                                    {   
+                                        auto it=possibility[r1][c1].begin();
+                                        cout<<"Hint:Obvious Pair"<<endl;
+                                        cout<<"for box "<<box+1<<" there is only two sub-box ("<<r1+1<<","<<c1+1<<") , ("<<r2+1<<","<<c2+1<<") where you can insert "<<*it<<" ";
+                                        it++;
+                                        cout<<"and "<<*it<<endl;
+                                        return found;
                                     }
                                 }
                             }
@@ -629,13 +629,13 @@ bool Sudoku::applyPointingPair(vector<vector<char>>&tempboard,bool printReason)
                             (possibility[row][c].erase(num))) 
                             {
                                 found = true;
-                                if(printReason)
-                                {   
-                                    cout<<"Hint:Pointing Pair"<<endl;
-                                    cout<<"for box "<<box+1<<" there is only one row "<<row+1<<" where you can insert "<<num<<endl;
-                                }
-                                return found;
                             }
+                    }
+                    if(found && printReason)
+                    {   
+                        cout<<"Hint:Pointing Pair"<<endl;
+                        cout<<"for box "<<box+1<<" there is only one row "<<row+1<<" where you can insert "<<num<<endl;
+                        return found;
                     }
                 }
                 
@@ -664,13 +664,13 @@ bool Sudoku::applyPointingPair(vector<vector<char>>&tempboard,bool printReason)
                             (possibility[r][col].erase(num))) 
                             {
                                 found = true;
-                                if(printReason)
-                                {   
-                                    cout<<"Hint:Pointing Pair"<<endl;
-                                    cout<<"for box "<<box+1<<" there is only one column "<<col+1<<" where you can insert "<<num<<endl;
-                                }
-                                return found;
                             }
+                    }
+                    if(found && printReason)
+                    {   
+                        cout<<"Hint:Pointing Pair"<<endl;
+                        cout<<"for box "<<box+1<<" there is only one column "<<col+1<<" where you can insert "<<num<<endl;
+                        return found;
                     }
                 }
             }
