@@ -26,7 +26,7 @@ private:
     uniform_int_distribution<int> dist{0, 6};
     void reseedRandom();
     bool isValidMove(vector<vector<char>>& b, int row, int col, char num);
-    int countSolutions(vector<vector<char>>& b, int& count);
+    void countSolutions(vector<vector<char>>& b, int& count);
     bool fillGrid(int row, int col);
     void initializepossiblity();
     void updatepossiblityAfterMove(int row, int col, char num);
