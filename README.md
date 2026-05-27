@@ -23,16 +23,10 @@ sudoku_project/
 
 ## Build Instructions
 
-### Ubuntu/Linux
+compile and run the application using:
 ```bash
-g++ -std=c++17 main.cpp Sudoku.cpp -o sudoku
-./sudoku
-```
-
-### Windows
-```cmd
-g++ -std=c++17 main.cpp Sudoku.cpp -o sudoku.exe
-sudoku.exe
+g++ main.cpp Sudoku.cpp -o sudoku
+sudoku
 ```
 
 ### Requirements

@@ -7,7 +7,7 @@ using namespace std::chrono;
 Sudoku::Sudoku()
     {
         board.resize(9, vector<char>(9, ' '));
-        solution.resize(9, vector<char>(9, ' '));
+        solution.clear();
         possibility.assign(9,vector<int>(9, 0));
     }
 //calls generateSudokuWithNClues function
@@ -20,6 +20,7 @@ void Sudoku::generateRandomSudoku(int n)
 //takes input of sudoku from user
 void Sudoku::inputCustomSudoku()
     {
+        solution.clear();
         cout<<"Enter the Sudoku puzzle Row wise without any blank space(0 for empty cells):\n";
         string s;
         for(int i=0;i<9;i++)
@@ -52,14 +53,72 @@ void Sudoku::inputCustomSudoku()
         return;
     }
 //main function for user interface
-bool Sudoku::sudokuValidator(vector<vector<char>>&board)
+bool Sudoku::sudokuValidator()
 {
+    // Check rows for duplicates
+    for (int i = 0; i < 9; i++) 
+    {
+        int mask = 0;
+        for (int j = 0; j < 9; j++) 
+        {
+            if (board[i][j] != ' ') 
+            {
+                int val = board[i][j] - '1';
+                if (val < 0 || val > 8) return false;
+                if (mask & (1 << val)) return false;
+                mask |= (1 << val);
+            }
+        }
+    }
     
+    // Check columns for duplicates
+    for (int j = 0; j < 9; j++) 
+    {
+        int mask = 0;
+        for (int i = 0; i < 9; i++) 
+        {
+            if (board[i][j] != ' ') 
+            {
+                int val = board[i][j] - '1';
+                if (mask & (1 << val)) return false;
+                mask |= (1 << val);
+            }
+        }
+    }
+    
+    // Check 3x3 boxes for duplicates
+    for (int box = 0; box < 9; box++) 
+    {
+        int startRow = (box / 3) * 3;
+        int startCol = (box % 3) * 3;
+        int mask = 0;
+        for (int r = startRow; r < startRow + 3; r++) 
+        {
+            for (int c = startCol; c < startCol + 3; c++) 
+            {
+                if (board[r][c] != ' ') 
+                {
+                    int val = board[r][c] - '1';
+                    if (mask & (1 << val)) return false;
+                    mask |= (1 << val);
+                }
+            }
+        }
+    }
+    return true;
 }
 void Sudoku::interactiveSolve()
     {
-        vector<vector<char>> temp_board = board;
-        solution=recursivesolver(temp_board);
+        if (!sudokuValidator()) 
+        {
+            cout << "Invalid Sudoku: Board contains duplicates in a row, column, or box.\n";
+            return;
+        }
+        if (solution.empty())
+        {
+            vector<vector<char>> temp_board = board;
+            solution=recursivesolver(temp_board);
+        }
         initializepossiblity();
         if(solution.size()==1 && solution[0].size()==1 && solution[0][0] == '1')
         {
@@ -131,6 +190,7 @@ void Sudoku::interactiveSolve()
             else 
             {
                 board[row-1][col-1] = ch;
+                updatepossiblityAfterMove(row-1, col-1, ch);
             }
         }
         printBoard(board);
@@ -140,8 +200,16 @@ void Sudoku::interactiveSolve()
 void Sudoku::getsolution()
     {
         //validate sudoku
-        vector<vector<char>> temp_board = board;
-        solution=recursivesolver(temp_board);
+        if (!sudokuValidator()) 
+        {
+            cout << "Invalid Sudoku: Board contains duplicates in a row, column, or box.\n";
+            return;
+        }
+        if (solution.empty())
+        {
+            vector<vector<char>> temp_board = board;
+            solution=recursivesolver(temp_board);
+        }
         if(solution.size()==1 && solution[0].size()==1 && solution[0][0] == '1')
         {
             cout<<"No unique solution exists for the given Sudoku puzzle.\n";
@@ -194,7 +262,7 @@ bool Sudoku::isValidMove(vector<vector<char>> &board, int row, int col, char num
         return true;
     }
 //checks if generated sudoku is solvable by human(checks basic methods,advance methods will be added)
-bool Sudoku::isHumansolvable(vector<vector<char>>&board)
+bool Sudoku::isHumansolvable()
     {       
         vector<vector<char>>tempboard=board;
         initializepossiblity();
@@ -234,7 +302,7 @@ bool Sudoku::isHumansolvable(vector<vector<char>>&board)
         return isSolved(tempboard);
     }
 //helps to fill values that are directly solvable ,so that it reduces recursion
-void Sudoku::humansolver(vector<vector<char>>&board)
+void Sudoku::humansolver()
     {       
         initializepossiblity();
         
@@ -807,7 +875,7 @@ void Sudoku::generateSudokuWithNClues(int n)
             board[row][col] = ' ';
             int count = 0;
             countSolutions(board,count);
-            if((count != 1)||(!isHumansolvable(board)))
+            if((count != 1)||(!isHumansolvable()))
             {
                 board[row][col] = backup;
             }
@@ -831,31 +899,62 @@ vector<vector<char>> Sudoku::recursivesolver(vector<vector<char>>& board)
         {
             return {{'0'}};
         }
-        humansolver(board);
-        //to do : get box with min possiblity
-        for(int i=0;i<9;i++)
+        humansolver();
+        
+        int min_candidates = 10;
+        int target_row = -1;
+        int target_col = -1;
+        
+        auto countCandidates = [](int mask) {
+            int count = 0;
+            while (mask) {
+                count += (mask & 1);
+                mask >>= 1;
+            }
+            return count;
+        };
+        
+        for (int r = 0; r < 9; r++) 
         {
-            for(int j=0;j<9;j++)
+            for (int c = 0; c < 9; c++) 
             {
-                if(board[i][j] == ' ')
+                if (board[r][c] == ' ') 
                 {
-                    for(char num = '1'; num <= '9'; num++)
+                    int cnt = countCandidates(possibility[r][c]);
+                    if (cnt == 0) 
                     {
-                        if(isValidMove(board, i, j, num))
-                        {
-                            vector<vector<char>> backup = board;
-                            board[i][j] = num;
-                            vector<vector<char>> result = recursivesolver(board);
-                            if(!result.empty() && result.size() == 9)
-                                return result;
-                            board = backup;
-                        }
+                        return {};
                     }
-                    return {};
+                    if (cnt < min_candidates) 
+                    {
+                        min_candidates = cnt;
+                        target_row = r;
+                        target_col = c;
+                    }
                 }
             }
         }
-        return board;
+        
+        if (target_row == -1) 
+        {
+            return board;
+        }
+        
+        int mask = possibility[target_row][target_col];
+        for (int i = 0; i < 9; i++) 
+        {
+            if (mask & (1 << i)) 
+            {
+                char num = '1' + i;
+                vector<vector<char>> backup = board;
+                board[target_row][target_col] = num;
+                vector<vector<char>> result = recursivesolver(board);
+                if (!result.empty() && result.size() == 9)
+                    return result;
+                board = backup;
+            }
+        }
+        return {};
     }
 //checks if sudoku is solved or not
 bool Sudoku::isSolved(vector<vector<char>>&board)
