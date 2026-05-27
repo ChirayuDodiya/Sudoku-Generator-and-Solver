@@ -18,13 +18,14 @@ public:
     void inputCustomSudoku();
     void interactiveSolve();
     void getsolution();
-
-private:
+    
+    private:
     vector<vector<char>> board, solution;
-    vector<vector<set<char>>> possibility;
+    vector<vector<int>> possibility;
     mt19937 rng;
     uniform_int_distribution<int> dist{0, 6};
     void reseedRandom();
+    bool sudokuValidator(vector<vector<char>>&board);
     bool isValidMove(vector<vector<char>>& b, int row, int col, char num);
     void countSolutions(vector<vector<char>>& b, int& count);
     bool fillGrid(int row, int col);
@@ -32,18 +33,18 @@ private:
     void updatepossiblityAfterMove(int row, int col, char num);
     bool isHumansolvable(vector<vector<char>> &board);
     //obviousSingle
-    bool applyObviousSingle(vector<vector<char>>&tempboard,bool printReason);
+    bool applyObviousSingle(vector<vector<char>>&board,bool printReason);
     //HiddenSingle
-    bool applyHiddenSingle(vector<vector<char>>&tempboard,bool printReason);
+    bool applyHiddenSingle(vector<vector<char>>&board,bool printReason);
     //obviousPair
-    bool applyObviousPair(vector<vector<char>>&tempboard,bool printReason);
+    bool applyObviousPair(vector<vector<char>>&board,bool printReason);
     //pointingPair
-    bool applyPointingPair(vector<vector<char>>&tempboard,bool printReason);
+    bool applyPointingPair(vector<vector<char>>&board,bool printReason);
     void generateSudokuWithNClues(int n);
     void printBoard(vector<vector<char>>& s);
     bool isSolved(vector<vector<char>>& b);
-    void solverhelper(vector<vector<char>>&board);
-    vector<vector<char>> findSolution(vector<vector<char>> b);
+    void humansolver(vector<vector<char>>&board);
+    vector<vector<char>> recursivesolver(vector<vector<char>> b);
 };
 
 #endif

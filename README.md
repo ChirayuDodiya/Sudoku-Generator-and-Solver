@@ -53,9 +53,7 @@ sudoku.exe
 
 Feel free to fork this project and submit pull requests for improvements such as:
 - Save/load functionality
-- GUI interface
 - Performance optimizations
-- Additional puzzle variants
 - Additional Human Solvable Patterns
 
 ## License
