@@ -44,7 +44,7 @@ public:
     void printBoard(vector<vector<char>>& s);
     bool isSolved(vector<vector<char>>& b);
     void humansolver(vector<vector<char>>&board);
-    vector<vector<char>> recursivesolver(vector<vector<char>> b);
+    vector<vector<char>> recursivesolver(vector<vector<char>>& b);
 };
 
 #endif

@@ -58,7 +58,8 @@ bool Sudoku::sudokuValidator(vector<vector<char>>&board)
 }
 void Sudoku::interactiveSolve()
     {
-        solution=recursivesolver(board);
+        vector<vector<char>> temp_board = board;
+        solution=recursivesolver(temp_board);
         initializepossiblity();
         if(solution.size()==1 && solution[0].size()==1 && solution[0][0] == '1')
         {
@@ -139,7 +140,8 @@ void Sudoku::interactiveSolve()
 void Sudoku::getsolution()
     {
         //validate sudoku
-        solution=recursivesolver(board);
+        vector<vector<char>> temp_board = board;
+        solution=recursivesolver(temp_board);
         if(solution.size()==1 && solution[0].size()==1 && solution[0][0] == '1')
         {
             cout<<"No unique solution exists for the given Sudoku puzzle.\n";
@@ -491,38 +493,38 @@ bool Sudoku::applyObviousPair(vector<vector<char>>&board,bool printReason)
                         {
                             // Remove these possibility from other cells in the row
                             int mask = possibility[row][col1];
+                            bool row_changed = false;
                             for (int c = 0; c < 9; c++) 
                             {
                                 if (c != col1 && c != col2 && board[row][c] == ' ')
                                 {
-                                    bool changed = false;
                                     for (int i = 0; i < 9; i++)
                                     {
                                         int bit = 1 << i;
                                         if ((mask & bit) && (possibility[row][c] & bit))
                                         {
                                             possibility[row][c] &= ~bit;
-                                            changed = true;
+                                            row_changed = true;
                                             found = true;
                                         }
                                     }
-                                    if(changed && printReason)
-                                    {   
-                                        int first = -1, second = -1;
-                                        for (int i = 0; i < 9; i++) {
-                                            if (mask & (1 << i)) {
-                                                if (first == -1) first = i;
-                                                else second = i;
-                                            }
-                                        }
-                                        char first_val = '1' + first;
-                                        char second_val = '1' + second;
-                                        cout<<"Hint:Obvious Pair"<<endl;
-                                        cout<<"for row "<<row+1<<" there is only two columns "<<col1+1<<" "<<col2+1<<" where you can insert "<<first_val<<" ";
-                                        cout<<"and "<<second_val<<endl;
-                                        return found;
+                                }
+                            }
+                            if(row_changed && printReason)
+                            {   
+                                int first = -1, second = -1;
+                                for (int i = 0; i < 9; i++) {
+                                    if (mask & (1 << i)) {
+                                        if (first == -1) first = i;
+                                        else second = i;
                                     }
                                 }
+                                char first_val = '1' + first;
+                                char second_val = '1' + second;
+                                cout<<"Hint:Obvious Pair"<<endl;
+                                cout<<"for row "<<row+1<<" there is only two columns "<<col1+1<<" "<<col2+1<<" where you can insert "<<first_val<<" ";
+                                cout<<"and "<<second_val<<endl;
+                                return found;
                             }
                         }
                 }
@@ -541,38 +543,38 @@ bool Sudoku::applyObviousPair(vector<vector<char>>&board,bool printReason)
                         possibility[row1][col] == possibility[row2][col]) 
                         {
                             int mask = possibility[row1][col];
+                            bool col_changed = false;
                             for (int r = 0; r < 9; r++) 
                             {
                                 if (r != row1 && r != row2 && board[r][col] == ' ') 
                                 {
-                                    bool changed = false;
                                     for (int i = 0; i < 9; i++) 
                                     {
                                         int bit = 1 << i;
                                         if ((mask & bit) && (possibility[r][col] & bit)) 
                                         {
                                             possibility[r][col] &= ~bit;
-                                            changed = true;
+                                            col_changed = true;
                                             found = true;
                                         }
                                     }
-                                    if(changed && printReason)
-                                    {   
-                                        int first = -1, second = -1;
-                                        for (int i = 0; i < 9; i++) {
-                                            if (mask & (1 << i)) {
-                                                if (first == -1) first = i;
-                                                else second = i;
-                                            }
-                                        }
-                                        char first_val = '1' + first;
-                                        char second_val = '1' + second;
-                                        cout<<"Hint:Obvious Pair"<<endl;
-                                        cout<<"for column "<<col+1<<" there is only two rows "<<row1+1<<" "<<row2+1<<" where you can insert "<<first_val<<" ";
-                                        cout<<"and "<<second_val<<endl;
-                                        return found;
+                                }
+                            }
+                            if(col_changed && printReason)
+                            {   
+                                int first = -1, second = -1;
+                                for (int i = 0; i < 9; i++) {
+                                    if (mask & (1 << i)) {
+                                        if (first == -1) first = i;
+                                        else second = i;
                                     }
                                 }
+                                char first_val = '1' + first;
+                                char second_val = '1' + second;
+                                cout<<"Hint:Obvious Pair"<<endl;
+                                cout<<"for column "<<col+1<<" there is only two rows "<<row1+1<<" "<<row2+1<<" where you can insert "<<first_val<<" ";
+                                cout<<"and "<<second_val<<endl;
+                                return found;
                             }
                         }
                 }
@@ -608,39 +610,39 @@ bool Sudoku::applyObviousPair(vector<vector<char>>&board,bool printReason)
                         possibility[r1][c1] == possibility[r2][c2]) 
                         {
                             int mask = possibility[r1][c1];
+                            bool box_changed = false;
                             for (auto& cell : empty_cells) 
                             {
                                 int r = cell.first, c = cell.second;
                                 if ((r != r1 || c != c1) && (r != r2 || c != c2)) 
                                 {
-                                    bool changed = false;
                                     for (int i = 0; i < 9; i++) 
                                     {
                                         int bit = 1 << i;
                                         if ((mask & bit) && (possibility[r][c] & bit)) 
                                         {
                                             possibility[r][c] &= ~bit;
-                                            changed = true;
+                                            box_changed = true;
                                             found = true;
                                         }
                                     }
-                                    if(changed && printReason)
-                                    {   
-                                        int first = -1, second = -1;
-                                        for (int i = 0; i < 9; i++) {
-                                            if (mask & (1 << i)) {
-                                                if (first == -1) first = i;
-                                                else second = i;
-                                            }
-                                        }
-                                        char first_val = '1' + first;
-                                        char second_val = '1' + second;
-                                        cout<<"Hint:Obvious Pair"<<endl;
-                                        cout<<"for box "<<box+1<<" there is only two sub-box ("<<r1+1<<","<<c1+1<<") , ("<<r2+1<<","<<c2+1<<") where you can insert "<<first_val<<" ";
-                                        cout<<"and "<<second_val<<endl;
-                                        return found;
+                                }
+                            }
+                            if(box_changed && printReason)
+                            {   
+                                int first = -1, second = -1;
+                                for (int i = 0; i < 9; i++) {
+                                    if (mask & (1 << i)) {
+                                        if (first == -1) first = i;
+                                        else second = i;
                                     }
                                 }
+                                char first_val = '1' + first;
+                                char second_val = '1' + second;
+                                cout<<"Hint:Obvious Pair"<<endl;
+                                cout<<"for box "<<box+1<<" there is only two sub-box ("<<r1+1<<","<<c1+1<<") , ("<<r2+1<<","<<c2+1<<") where you can insert "<<first_val<<" ";
+                                cout<<"and "<<second_val<<endl;
+                                return found;
                             }
                         }
                 }
@@ -816,7 +818,7 @@ void Sudoku::generateSudokuWithNClues(int n)
         }
     }
 //finds solution of sudoku
-vector<vector<char>> Sudoku::recursivesolver(vector<vector<char>>board)
+vector<vector<char>> Sudoku::recursivesolver(vector<vector<char>>& board)
     {
         int solutionCount = 0;
         countSolutions(board, solutionCount);
@@ -841,11 +843,12 @@ vector<vector<char>> Sudoku::recursivesolver(vector<vector<char>>board)
                     {
                         if(isValidMove(board, i, j, num))
                         {
+                            vector<vector<char>> backup = board;
                             board[i][j] = num;
                             vector<vector<char>> result = recursivesolver(board);
                             if(!result.empty() && result.size() == 9)
                                 return result;
-                            board[i][j] = ' ';
+                            board = backup;
                         }
                     }
                     return {};
